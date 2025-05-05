@@ -3,15 +3,3 @@
 //                                    Hiisi Digital Oy   contact@hiisi.digital
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
-
-use crate::input::MacroInput;
-use syn::parse_macro_input;
-
-mod input;
-
-#[proc_macro]
-pub fn bind<'a>(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(input as MacroInput<'a>);
-    let mut output = proc_macro::TokenStream::new();
-    output
-}

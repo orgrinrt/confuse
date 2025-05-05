@@ -15,7 +15,6 @@ impl<'p> AttributeWithPath<'p> for Attribute {
     }
 }
 
-// TODO: do we need some extra stuff beyond `syn::Attribute`?
 pub trait Attributable<'a> {
     type Attribute: AttributeWithPath<'a> + 'a;
     type Iterator: Iterator<Item = &'a Self::Attribute>;
