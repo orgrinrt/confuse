@@ -1,8 +1,5 @@
 <component name="CopyrightManager">
   <settings default="MPL">
-    <module2copyright>
-      <element module="source code" copyright="MPL" />
-    </module2copyright>
     <LanguageOptions name="__TEMPLATE__">
       <option name="block" value="false" />
       <option name="separateBefore" value="true" />
