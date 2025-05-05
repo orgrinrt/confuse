@@ -6,10 +6,10 @@
 
 use syn::Attribute;
 
-pub trait GetPath<'p> {
+pub trait AttributeWithPath<'p> {
     fn get_path(&'p self) -> &'p syn::Path;
 }
-impl<'p> GetPath<'p> for Attribute {
+impl<'p> AttributeWithPath<'p> for Attribute {
     fn get_path(&'p self) -> &'p syn::Path {
         self.path()
     }
@@ -17,7 +17,7 @@ impl<'p> GetPath<'p> for Attribute {
 
 // TODO: do we need some extra stuff beyond `syn::Attribute`?
 pub trait Attributable<'a> {
-    type Attribute: GetPath<'a> + 'a;
+    type Attribute: AttributeWithPath<'a> + 'a;
     type Iterator: Iterator<Item = &'a Self::Attribute>;
     fn parse_attributes(&self) -> Self::Iterator {
         todo!()
