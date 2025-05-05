@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-use syn::Token;
-use syn::punctuated::Punctuated;
 use crate::parser::segment::Segment;
+use syn::punctuated::Punctuated;
+use syn::Token;
 
 #[derive(Clone, Default)]
 pub struct Pattern<P: Clone = Token![.]> {
@@ -17,7 +17,9 @@ pub struct Pattern<P: Clone = Token![.]> {
 impl<P: Clone> From<Punctuated<Segment, P>> for Pattern<P> {
     fn from(punctuated: Punctuated<Segment, P>) -> Self {
         let mut segments = Vec::new();
-        let punct = punctuated.pairs().next()
+        let punct = punctuated
+            .pairs()
+            .next()
             .map(|pair| (pair.punct()).cloned())
             .expect("Expected a punct to exist in Punctuated");
 

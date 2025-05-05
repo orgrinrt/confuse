@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-use syn::punctuated::Punctuated;
 use proc_macro::Ident;
+use syn::punctuated::Punctuated;
 use syn::LitStr;
 
 #[cfg(feature = "patterns")]

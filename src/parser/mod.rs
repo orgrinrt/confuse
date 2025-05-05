@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-mod section;
-mod rule;
+mod attribute;
 mod pattern;
+mod rule;
+mod section;
 mod segment;
