@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-use tomlfuse::file;
+use confuse::file;
 
 // generate constants from test.toml
 file! {

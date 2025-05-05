@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 
 use std::path::PathBuf;
-use tomlfuse::package;
+use confuse::package;
 // creates compile-time constants from the closest Cargo.toml file
 package! {
     [package]

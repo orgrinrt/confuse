@@ -4,4 +4,7 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-mod parser;
+mod section;
+mod rule;
+mod pattern;
+mod segment;

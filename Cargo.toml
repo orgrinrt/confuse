@@ -1,10 +1,10 @@
 [package]
-name = "tomlfuse"
-version = "0.0.3"
+name = "confuse"
+version = "0.0.4"
 edition = "2021"
 rust-version = "1.73.0"
 description = """
-Easily bind toml fields into properly typed build-time constants with flexible patterns and hierarchies.
+Easily bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns.
 """
 authors = ["orgrinrt <orgrinrt@ikiuni.dev>", "Hiisi Digital Oy <ort@hiisi.digital>"]
 license-file = "LICENSE"
@@ -15,20 +15,37 @@ documentation = "https://docs.rs/tomlfuse"
 homepage = "https://github.com/orgrinrt/tomlfuse"
 repository = "https://github.com/orgrinrt/tomlfuse"
 
+[features]
+# TODO: should we default to no built-in formats? or all of them? either-or situation I think
+default = ["patterns", "alias", "lazy", "advanced_globs"]
+# built-in formats
+toml = ["dep:toml"]
+yaml = [] # TODO: evaluate options for yaml support
+json = [] # TODO: evaluate options for json support
+ron = [] # TODO: evaluate options for ron support
+env_file = [] # TODO: evaluate options for env_file support
+# core features
+patterns = ["dep:globset"]
+alias = []
+advanced_globs = ["patterns"]
+# optional features
+lazy = ["dep:once_cell"]
+dyn = [] # TODO: evaluate options for dyn support (just std is valid too)
+
 [dev-dependencies]
-tempfile = "3.19.1"
+tempfile = "3.19.1" # for integration tests
 
 [lib]
 proc-macro = true
 doctest = false # unfortunately not practical to setup the doc examples with actual toml files to load or even as inlined literals for the content
 
 [dependencies]
-toml = { version = "^0.8" }
+toml = { version = "^0.8", optional = true }
 proc-macro2 = { version = "^1.0" }
 quote = { version = "^1.0" }
 syn = { version = "^2.0" }
-globset = "^0.4"
-once_cell = { version = "^1.21", features = ["std"] }
+globset = { version = "^0.4", optional = true }
+once_cell = { version = "^1.21", features = ["std"], optional = true }
 
 # NOTE: below metadata is for test purposes only
 
