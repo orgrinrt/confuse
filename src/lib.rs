@@ -11,7 +11,8 @@ mod input;
 
 #[proc_macro]
 pub fn bind<'a>(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(input as MacroInput<'a>);
-    let mut output = proc_macro::TokenStream::new();
+    let _input = parse_macro_input!(input as MacroInput<'a>);
+    // TODO: actual impl
+    let output = proc_macro::TokenStream::new();
     output
 }

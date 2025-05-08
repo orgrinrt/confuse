@@ -46,6 +46,8 @@ quote = { version = "^1.0" }
 syn = { version = "^2.0" }
 globset = { version = "^0.4", optional = true }
 once_cell = { version = "^1.21", features = ["std"], optional = true }
+eyre = { version = "^0.6.12" }
+paste = { version = "^1.0.15" }
 
 # NOTE: below metadata is for test purposes only
 
