@@ -25,7 +25,10 @@ pub trait Attributable<'a>: ParsableAttributes<'a> {
     fn get_attributes(&'a self) -> Self::Iterator;
     fn get_attribute(&'a self, attribute: &'a str) -> Option<&'a Self::Attribute> {
         self.get_attributes()
-            .find(|attr: &&Self::Attribute| attr.get_path().is_ident(attribute)) // TODO: this is probably not actually correct?
+            .find(|attr: &&Self::Attribute| {
+                // TODO: this is probably not actually correct?
+                attr.get_path().is_ident(attribute)
+            })
     }
     fn add_attribute(&mut self, attribute: &Self::Attribute);
 }

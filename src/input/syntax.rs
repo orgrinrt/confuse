@@ -44,13 +44,10 @@ macro_rules! __validate_parse {
                 #[allow(non_snake_case)]
                 #[allow(unused_variables)]
                 fn $test_name() {
-                    #[allow(unused_variables)]
                     let input = quote! {
                         $($val_quote)*
                     };
-                    #[allow(unused_variables)]
                     let fork = input.clone();
-                    #[allow(unused_variables)]
                     let parsed = syn::parse2::<$target::<'_>>(input);
                     assert!(parsed.is_ok(), "Failed to parse {}: {:?}", stringify!($target), parsed.err());
                     validate(fork, parsed.unwrap());
@@ -334,8 +331,7 @@ syntax_nodes!(
                 single_wildcard_simple {      config.* }
                 single_wildcard_deeper {      defaults.__internal.foo.bar.baz.* }
             } as parsed {
-                // TODO: ensure that the resulting Def has all required fields with valid values
-                // FIXME: test
+                // TODO: ensure that the resulting Rule has all required fields with valid values
                 todo!()
             }
         }
