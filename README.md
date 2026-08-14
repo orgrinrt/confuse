@@ -9,9 +9,19 @@
 
 > Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
 
-> # ⚠️WIP⚠️
-> ### This crate is a work-in-progress rewrite of [tomlfuse](https://crates.io/crates/tomlfuse). Until it reaches a release, use tomlfuse version `0.0.3` for toml file binding.
-> *The sections below describe the target design. The current code defines the `bind!` macro's syntax surface only and does not yet generate code.*
+> # ⚠️ WORK IN PROGRESS ⚠️
+> ### Nothing here works yet. Everything below describes the target design, not the current code.
+> The `bind!` macro's syntax surface is defined; its parser entry point is not written, so the
+> macro does not compile for any input, and no code is generated for any format.
+>
+> **For binding toml today, use [`tomlfuse`](https://github.com/orgrinrt/tomlfuse).** It is the
+> working implementation, it is not deprecated, and this crate uses it for the toml case rather
+> than reimplementing it. What this crate adds on top is the other formats and the binding forms
+> beyond a file.
+>
+> **The name is pending a change.** `confuse` is taken on crates.io by an unrelated crate, so this
+> cannot publish under it. The name stays for now to keep the repository and its history stable,
+> and will change before any release.
 
 </div>
 
