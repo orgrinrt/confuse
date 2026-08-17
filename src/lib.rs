@@ -15,7 +15,7 @@ mod input;
 
 /// Binds a structured data file into typed build-time constants.
 ///
-/// The single-source toml case is [`tomlfuse`]'s `file!` macro, and `bind!` writes that case in
+/// The single-source toml case is `tomlfuse`'s `file!` macro, and `bind!` writes that case in
 /// the same syntax, so the input is handed to it rather than binding toml a second time here.
 /// Anything the wider design adds on top, meaning several sources in one invocation and formats
 /// other than toml, is not implemented: such input reaches tomlfuse's parser and is rejected
@@ -42,7 +42,7 @@ pub fn bind(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
-/// Binds a toml file, the same as [`tomlfuse`]'s `file!`.
+/// Binds a toml file, the same as `tomlfuse`'s `file!`.
 ///
 /// Forwarded to it rather than reimplemented; see [`bind!`] for why.
 #[proc_macro]
@@ -54,7 +54,7 @@ pub fn file(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
-/// Binds the current package's manifest, the same as [`tomlfuse`]'s `package!`.
+/// Binds the current package's manifest, the same as `tomlfuse`'s `package!`.
 #[proc_macro]
 pub fn package(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let forwarded: TokenStream2 = input.into();
@@ -64,7 +64,7 @@ pub fn package(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
-/// Binds the workspace manifest, the same as [`tomlfuse`]'s `workspace!`.
+/// Binds the workspace manifest, the same as `tomlfuse`'s `workspace!`.
 #[proc_macro]
 pub fn workspace(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let forwarded: TokenStream2 = input.into();
