@@ -34,7 +34,7 @@ dyn = [] # TODO: evaluate options for dyn support (just std is valid too)
 [dev-dependencies]
 tempfile = "3.19.1" # for integration tests
 # the macros here expand to tomlfuse's, so the tests need it the same way a consumer does
-tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git" }
+tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", version = "0.0.3" }
 
 [lib]
 proc-macro = true
