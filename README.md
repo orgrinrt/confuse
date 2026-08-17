@@ -10,14 +10,18 @@
 > Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
 
 > # ⚠️ WORK IN PROGRESS ⚠️
-> ### Nothing here works yet. Everything below describes the target design, not the current code.
-> The `bind!` macro's syntax surface is defined; its parser entry point is not written, so the
-> macro does not compile for any input, and no code is generated for any format.
+> ### Almost everything below describes the target design, not the current code.
+> One case is implemented: a single toml source, bound with `bind!`, `file!`, `package!` or
+> `workspace!`. Those four forward their input to the macro of the same name in
+> [`tomlfuse`](https://github.com/orgrinrt/tomlfuse), which is the working toml implementation and
+> is not deprecated. Nothing else in this readme is built. Several sources in one invocation, the
+> other formats, `env` bindings, the `#[fuse]` attribute, the per-format macros, section
+> attributes and resolution modes are all unimplemented, and such input is rejected by tomlfuse's
+> parser rather than handled here.
 >
-> **For binding toml today, use [`tomlfuse`](https://github.com/orgrinrt/tomlfuse).** It is the
-> working implementation, it is not deprecated, and this crate uses it for the toml case rather
-> than reimplementing it. What this crate adds on top is the other formats and the binding forms
-> beyond a file.
+> **Forwarding means the calling crate needs `tomlfuse` among its own dependencies**, alongside
+> this one. A proc-macro crate cannot re-export another crate's macros, so removing that would
+> mean splitting this into a facade crate and a proc-macro crate behind it.
 >
 > **The name is pending a change.** `confuse` is taken on crates.io by an unrelated crate, so this
 > cannot publish under it. The name stays for now to keep the repository and its history stable,
