@@ -4,16 +4,15 @@ version = "0.0.4"
 edition = "2021"
 rust-version = "1.73.0"
 description = """
-Easily bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns.
+Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
 """
 authors = ["orgrinrt <orgrinrt@ikiuni.dev>", "Hiisi Digital Oy <ort@hiisi.digital>"]
 license-file = "LICENSE"
 readme = "README.md"
 keywords = ["toml", "build-time", "constant", "proc-macro"]
 categories = ["development-tools", "config"]
-documentation = "https://docs.rs/tomlfuse"
-homepage = "https://github.com/orgrinrt/tomlfuse"
-repository = "https://github.com/orgrinrt/tomlfuse"
+homepage = "https://github.com/orgrinrt/confuse"
+repository = "https://github.com/orgrinrt/confuse"
 
 [features]
 # TODO: should we default to no built-in formats? or all of them? either-or situation I think
@@ -34,6 +33,8 @@ dyn = [] # TODO: evaluate options for dyn support (just std is valid too)
 
 [dev-dependencies]
 tempfile = "3.19.1" # for integration tests
+# the macros here expand to tomlfuse's, so the tests need it the same way a consumer does
+tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", version = "0.0.4" }
 
 [lib]
 proc-macro = true

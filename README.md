@@ -3,18 +3,29 @@
 <div align="center" style="text-align: center;">
 
 [![GitHub Stars](https://img.shields.io/github/stars/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/stargazers)
-[![Crates.io Total Downloads](https://img.shields.io/crates/d/confuse)](https://crates.io/crates/confuse)
 [![GitHub Issues](https://img.shields.io/github/issues/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/issues)
 [![Latest Version](https://img.shields.io/badge/version-0.0.4-red.svg?label=latest)](https://github.com/orgrinrt/confuse)
-![Crates.io Version](https://img.shields.io/crates/v/confuse?logoSize=auto&color=%23FDC700&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fconfuse)
-![Crates.io Size](https://img.shields.io/crates/size/confuse?color=%23C27AFF&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fconfuse)
 ![GitHub last commit](https://img.shields.io/github/last-commit/orgrinrt/confuse?color=%23009689&link=https%3A%2F%2Fgithub.com%2Forgrinrt%2Fconfuse)
 
-> Easily bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns.
+> Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
 
-> # ⚠️WIP⚠️
-> ### Until release, consider [tomlfuse]("https://crates.io/crates/tomlfuse") version `0.0.3` for toml file binding.
-> *version `0.0.4` deprecates the crate, but `0.0.3` will still be available
+> # ⚠️ WORK IN PROGRESS ⚠️
+> ### Almost everything below describes the target design, not the current code.
+> One case is implemented: a single toml source, bound with `bind!`, `file!`, `package!` or
+> `workspace!`. Those four forward their input to the macro of the same name in
+> [`tomlfuse`](https://github.com/orgrinrt/tomlfuse), which is the working toml implementation and
+> is not deprecated. Nothing else in this readme is built. Several sources in one invocation, the
+> other formats, `env` bindings, the `#[fuse]` attribute, the per-format macros, section
+> attributes and resolution modes are all unimplemented, and such input is rejected by tomlfuse's
+> parser rather than handled here.
+>
+> **Forwarding means the calling crate needs `tomlfuse` among its own dependencies**, alongside
+> this one. A proc-macro crate cannot re-export another crate's macros, so removing that would
+> mean splitting this into a facade crate and a proc-macro crate behind it.
+>
+> **The name is pending a change.** `confuse` is taken on crates.io by an unrelated crate, so this
+> cannot publish under it. The name stays for now to keep the repository and its history stable,
+> and will change before any release.
 
 </div>
 
@@ -34,12 +45,12 @@
 ## Supported formats
 | Feature | Format | Status     | Default</br>Extensions | Default</br>Feature | Notes                                                             |
 |---------|--------|------------|------------------------|---------------------|-------------------------------------------------------------------|
-| `toml`  | toml   | 🚧 wip     | .toml                  | ✅                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
-| `json`  | json   | 📝 planned | .json                  | ✅                   |                                                                   |
-| `yaml`  | yaml   | 📝 planned | .yaml                  | ✅                   |                                                                   |
+| `toml`  | toml   | 🚧 wip     | .toml                  | ❌                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
+| `json`  | json   | 📝 planned | .json                  | ❌                   |                                                                   |
+| `yaml`  | yaml   | 📝 planned | .yaml                  | ❌                   |                                                                   |
 | `ron`   | ron    | 📝 planned | .ron                   | ❌                   |                                                                   |
 
-See [Custom formats](#custom-formats) for more information on how to add support for custom formats.
+No format feature is enabled by default yet; the current `default` set is `patterns`, `alias`, `lazy` and `advanced_globs`. Custom formats plug in through custom parsers, using the `as MyCustomParser` syntax shown in the detailed usage below.
 
 
 ## Usage: `bind!` macro
@@ -70,7 +81,7 @@ fn main() {
     let hello = defaults::HELLO; //              from source's `project.defaults.hello.msg`
     for p in defaults::PEOPLE { //               from source's `project.defaults.people`
         if p.is_empty() {
-            eprintln!(err_msg);
+            eprintln!("{}", err_msg);
             continue;
         }
         println!("{} says {}", p, hello);
@@ -92,7 +103,7 @@ confuse::bind! {
     "fizz/buzz.json" //    <=> `source buzz = "fizz/buzz.json"`
     
     // if the entire binding invocation only uses a single source file, the naming
-    // can entirely be omitted for brevity and convenience! see binding rules for examples.
+    // can entirely be omitted for brevity and convenience; see binding rules for examples.
     
     // by default, the format is inferred from the extension
     // so there is, in most cases, no need to specify the format
@@ -144,7 +155,7 @@ confuse::bind! {
 
     [settings] // <-- will generate a rust module named `settings`
     config.*           // = include all config.* fields
-    !config.internal.* // = ...but exclude internals!
+    !config.internal.* // = ...but exclude internals
 
     // there is optionally a syntax for attributes:
     [settings, {
@@ -197,7 +208,7 @@ confuse::bind! {
     // - `static`: will be resolved at compile time, but inlining left to compiler
     // - `const`: will be resolved at compile time and inlined always
     static config.foo.* //  <-- all the matches will resolve at compile time, but may not inline
-    lazy config.foo.buzz // <-- valid for indidivudal fields too.
+    lazy config.foo.buzz // <-- valid for individual fields too.
     const config.bar.baz // <-- this will resolve at compile time and always inline.
     // ^ this is the default behaviour implicitly used if no resolution mode is set.
     //   this also means you can also just omit explicitly writing it for brevity and convenience.
@@ -241,7 +252,7 @@ confuse::bind! {
 ```
 
 ### Format macros
-For the supported formats, you can use the respectively named macros to bind files witih less verbosity in the macro input, for example:
+For the supported formats, you can use the respectively named macros to bind files with less verbosity in the macro input, for example:
 ```rust
 use confuse::toml;
 toml! {
@@ -268,7 +279,7 @@ toml! {
 ## Usage: `#[fuse]` attribute
 ### Basic example: Fusing to a module
 ```rust
-use confuse::confuse;
+use confuse::fuse;
 
 // the very same concepts as the `bind!` macro, but the resulting code is 
 // "fused" into the item the attribute is attached to. 
@@ -332,7 +343,7 @@ struct Person {
 
 ### Value types and patterns
 
-- Presently only supports homogenous arrays (e.g. `["a", "b", "c"]`), not heterogeneous (e.g. `[1, "a", 3.14]`)
+- Presently only supports homogeneous arrays (e.g. `["a", "b", "c"]`), not heterogeneous (e.g. `[1, "a", 3.14]`)
 <details>
 <summary>*Click to expand notes*</summary>
 
@@ -340,7 +351,7 @@ struct Person {
         - Initially by converting each element to a string representation and generating an array of strings in its stead (not ideal, but leaves the door open for consumer-side implementations for this)
         - Later down the line, as an optional alternative, by translating the array to an array of option tuples by merging the unique types of all the elements in the array as options wherein each
           `Some` value represents the element, and writing some convenience traits around the concept to get the values out of the array in a type-safe but "natural" way, while remaining build-time constant and avoiding dynamic dispatch
-            - A tradeoff between runtime performance and binary size and compilation time, essentially,
+            - A tradeoff between runtime performance and binary size and compilation time,
               *if* someone truly needs this
     - However, I'm not sure this is a common enough use-case to make a priority right now, I would be interested to hear any use cases that would require this though
 </details>
@@ -350,7 +361,7 @@ struct Person {
 <details>
 <summary>*Click to expand notes*</summary>
 
-    - These tests and possibly some refactoring for increased robustness are however being implemented in very near future as it is fundamental to the concept to handle these
+    - These tests and possibly some refactoring to cover these cases are however being implemented in very near future as it is fundamental to the concept to handle these
     - The most common use case would be the patterns supported right now, so this crate releases initially with just them stabilized
 </details>
 
@@ -369,7 +380,7 @@ struct Person {
         - This will however have some constraints that make it less useful than I'd ultimately want it to be, like:
             - This would only work with patterns that contain nothing but glob stars (however the amount of those could be any)
             - If there are multiple stars, then both sides of the alias assignment must match the same amount of stars, otherwise it won't work, which may or may not be obvious and would probably be confusing to the user
-    - In the long run, it'd be great to find a more robust solution, but this would be entirely outside this crate's scope, so it would be an integration of another crate that does this ultimately.
+    - In the long run, it'd be great to find a more general solution, but this would be entirely outside this crate's scope, so it would be an integration of another crate that does this ultimately.
         - I would be interested to hear suggestions in the meanwhile
 </details> 
 
@@ -409,4 +420,4 @@ Whether you use this project, have learned something from it, or just like it, p
 
 `SPDX-License-Identifier: MPL-2.0`
 
-> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/master/LICENSE)
+> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/main/LICENSE)
