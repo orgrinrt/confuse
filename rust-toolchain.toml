@@ -1,2 +1,7 @@
 [toolchain]
-channel = "1.73.0"
+# 1.73.0 could no longer resolve the dependency graph: globset 0.4.20 needs edition 2024, and
+# pinning it back only moves the failure to hashbrown 0.17.1. On stable the graph resolves and the
+# crate compiles; twelve parser tests then fail against the current syn, which is a real gap and is
+# catalogued rather than hidden behind a compiler nobody can install a dependency for.
+channel = "stable"
+components = ["rustfmt", "clippy"]
