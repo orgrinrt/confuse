@@ -9,7 +9,7 @@
 //! `tests/toml/test.toml` at compile time.
 
 confuse::bind! {
-    "tests/toml/test.toml"
+    "tests/test.toml"
 
     [basics]
     section.*
@@ -35,7 +35,9 @@ fn binds_arrays_from_the_file() {
 
 #[test]
 fn flattens_a_nested_table() {
-    assert!(nested_values::VALUE);
+    // A `const` block, because every binding is a constant: this is checked when the test
+    // compiles rather than when it runs, which is where a compile-time binding belongs.
+    const { assert!(nested_values::VALUE) };
     assert_eq!(nested_values::STRING, "nested string");
 }
 
@@ -48,5 +50,5 @@ fn keeps_deeper_tables_as_modules() {
 #[test]
 fn honours_an_excluded_branch() {
     // `!config.logging.*` was excluded, so the module is bound without it
-    assert!(!without_internals::DEBUG);
+    const { assert!(!without_internals::DEBUG) };
 }

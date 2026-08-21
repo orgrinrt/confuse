@@ -1,0 +1,20 @@
+# The configuration the examples in this directory read.
+
+# What the service calls itself.
+[service]
+name = "kaiku"
+version = "0.3.1"
+
+[transport]
+host = "0.0.0.0"
+port = 9000
+# Operator bookkeeping, of no interest to the binary.
+internal.region = "eu-north"
+
+[retries]
+attempts = 4
+backoff_ms = 250
+
+[logging]
+level = "debug"
+targets = ["stdout"]
