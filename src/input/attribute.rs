@@ -24,11 +24,10 @@ pub trait Attributable<'a>: ParsableAttributes<'a> {
     }
     fn get_attributes(&'a self) -> Self::Iterator;
     fn get_attribute(&'a self, attribute: &'a str) -> Option<&'a Self::Attribute> {
-        self.get_attributes()
-            .find(|attr: &&Self::Attribute| {
-                // TODO: this is probably not actually correct?
-                attr.get_path().is_ident(attribute)
-            })
+        self.get_attributes().find(|attr: &&Self::Attribute| {
+            // TODO: this is probably not actually correct?
+            attr.get_path().is_ident(attribute)
+        })
     }
     fn add_attribute(&mut self, attribute: &Self::Attribute);
 }
@@ -37,7 +36,7 @@ pub trait ParsableAttributes<'a> {
     fn parse_attributes(&self, input: &'a ParseBuffer<'a>) -> eyre::Result<&'a ParseBuffer<'a>>;
 }
 
-impl<'a, A: Attributable<'a, Attribute=Attribute>> ParsableAttributes<'a> for A {
+impl<'a, A: Attributable<'a, Attribute = Attribute>> ParsableAttributes<'a> for A {
     fn parse_attributes(&self, input: &'a ParseBuffer<'a>) -> eyre::Result<&'a ParseBuffer<'a>> {
         if let Err(e) = input.call(Attribute::parse_outer) {
             Err(eyre::eyre!("Failed to parse attributes: {}", e))

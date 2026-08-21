@@ -33,15 +33,22 @@ fn the_values_match_the_manifest_on_disk() {
     // would be caught only by them disagreeing with the manifest. Reading it back here is
     // what ties them to it: edit the metadata and this test says so rather than the constants
     // quietly holding what somebody typed into a test a year ago.
-    let manifest: toml::Table =
-        toml::from_str(&std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
-            .expect("the manifest reads"))
-        .expect("the manifest parses");
+    let manifest: toml::Table = toml::from_str(
+        &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+            .expect("the manifest reads"),
+    )
+    .expect("the manifest parses");
 
     let metadata = manifest["workspace"]["metadata"]
         .as_table()
         .expect("[workspace.metadata] is a table");
 
-    assert_eq!(meta::PURPOSE, metadata["purpose"].as_str().expect("a string"));
-    assert_eq!(meta::COUNT, metadata["count"].as_integer().expect("an integer"));
+    assert_eq!(
+        meta::PURPOSE,
+        metadata["purpose"].as_str().expect("a string")
+    );
+    assert_eq!(
+        meta::COUNT,
+        metadata["count"].as_integer().expect("an integer")
+    );
 }

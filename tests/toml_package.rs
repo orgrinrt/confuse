@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
-use std::path::PathBuf;
 use confuse::package;
+use std::path::PathBuf;
 // creates compile-time constants from the closest Cargo.toml file
 package! {
     [package]

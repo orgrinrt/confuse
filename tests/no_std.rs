@@ -51,10 +51,21 @@ pub const FLAG: bool = surface::FLAG;
 pub const LIST: &[&str] = surface::LIST;
 "#;
 
-/// The `tomlfuse` requirement, spelled the way this crate's own dev-dependency spells it so
-/// the two move together.
-const TOMLFUSE_DEP: &str =
-    r#"tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", version = "0.0.4" }"#;
+/// The `tomlfuse` requirement, read out of this crate's own manifest.
+///
+/// It used to be a second copy of that line, under a comment saying the two moved together.
+/// They were two string literals in two files and nothing made them move or reported when
+/// they stopped agreeing. Reading the manifest is what the comment claimed.
+fn tomlfuse_dep() -> String {
+    let manifest = fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+        .expect("this crate's manifest");
+    manifest
+        .lines()
+        .find(|line| line.trim_start().starts_with("tomlfuse = "))
+        .unwrap_or_else(|| panic!("no tomlfuse dependency line in the manifest"))
+        .trim()
+        .to_string()
+}
 
 /// Writes a consumer crate and builds it against this one at `features`.
 ///
@@ -66,8 +77,11 @@ fn consumer_compiles(
     extra_deps: &str,
     body: &str,
 ) -> (bool, String) {
-    let root =
-        PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/target/no-std-consumers")).join(name);
+    let root = PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/target/no-std-consumers"
+    ))
+    .join(name);
     fs::create_dir_all(root.join("src")).expect("the consumer directory");
     fs::write(root.join("surface.toml"), FIXTURE).expect("the consumer fixture");
 
@@ -126,8 +140,12 @@ fn a_no_std_consumer_compiles_on_every_selection() {
         &["toml", "patterns", "alias", "no_std", "no_alloc"][..],
     ] {
         let name = features.join("_");
-        let (ok, stderr) =
-            consumer_compiles(&format!("nostd_{name}"), features, TOMLFUSE_DEP, USES_EVERY_TYPE);
+        let (ok, stderr) = consumer_compiles(
+            &format!("nostd_{name}"),
+            features,
+            tomlfuse_dep().as_str(),
+            USES_EVERY_TYPE,
+        );
         assert!(
             ok,
             "a `#![no_std]` consumer failed to build against features {features:?}:\n{stderr}"
@@ -143,8 +161,12 @@ fn the_no_std_consumer_really_has_no_std() {
     let body = format!(
         "{USES_EVERY_TYPE}\npub fn control() -> std::string::String {{ std::string::String::new() }}\n"
     );
-    let (ok, stderr) =
-        consumer_compiles("nostd_control", &["toml", "no_std"], TOMLFUSE_DEP, &body);
+    let (ok, stderr) = consumer_compiles(
+        "nostd_control",
+        &["toml", "no_std"],
+        tomlfuse_dep().as_str(),
+        &body,
+    );
     assert!(
         !ok,
         "the control consumer named `std` and compiled anyway, so `#![no_std]` is not in \
@@ -168,8 +190,7 @@ fn a_consumer_without_tomlfuse_cannot_resolve_the_binding() {
     // What this test is for is the day somebody changes the forwarding. If the expansion ever
     // stops naming `tomlfuse`, this fails, and the README stops being true in the same
     // moment.
-    let (ok, stderr) =
-        consumer_compiles("without_tomlfuse", &["toml"], "", USES_EVERY_TYPE);
+    let (ok, stderr) = consumer_compiles("without_tomlfuse", &["toml"], "", USES_EVERY_TYPE);
     assert!(
         !ok,
         "a consumer that does not depend on `tomlfuse` compiled a binding anyway. Either the \

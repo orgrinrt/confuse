@@ -70,8 +70,14 @@ tempfile = "3.19.1" # for integration tests
 # an optional dependency of the crate and is not in the default set, so a test cannot rely on
 # the feature being on to reach it.
 toml = "^0.8"
-# the macros here expand to tomlfuse's, so the tests need it the same way a consumer does
-tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", version = "0.0.4" }
+# the macros here expand to tomlfuse's, so the tests need it the same way a consumer does.
+#
+# Tracks `dev`, like every other cross-repo git dependency in this workspace. Without a branch
+# it tracked `main`, which is 0.0.4 today and becomes 0.0.5 at the next release, and a 0.0.x
+# bump is breaking, so `version = "0.0.4"` would stop resolving the moment that release landed.
+# Latent rather than broken is the worst place for that to sit: it fails in a repository nobody
+# was editing, on a day nobody touched it.
+tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", branch = "dev", version = "0.0.5" }
 
 [lib]
 proc-macro = true

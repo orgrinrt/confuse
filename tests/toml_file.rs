@@ -6,8 +6,13 @@
 
 // `test.toml` holds 3.14, and a lint that fires on a value rather than on how it was written
 // lands on the generated code spanned at the macro invocation, where no `#[allow]` written
-// inside a function reaches it. tomlfuse 0.0.5 puts the allow on the code it generates, which
-// is where it belongs; until this crate's requirement moves to it, the allow lives here.
+// inside a function reaches it.
+//
+// tomlfuse 0.0.5 puts an allow on the code it generates, and this crate now requires that
+// version, and the lint still fires: checked by removing this line, which brings back two
+// occurrences. So something in the forwarding does not carry the attribute through. Worth
+// finding, and it is tomlfuse's or this crate's expansion rather than the test's, so the
+// allow stays here in the meantime rather than the note claiming it is about to go away.
 #![allow(clippy::approx_constant)]
 
 use confuse::file;
