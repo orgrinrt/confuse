@@ -4,6 +4,17 @@
 // SPDX-License-Identifier: MPL-2.0    O. R. Toimela      N2963@student.jamk.fi
 //------------------------------------------------------------------------------
 
+// `test.toml` holds 3.14, and a lint that fires on a value rather than on how it was written
+// lands on the generated code spanned at the macro invocation, where no `#[allow]` written
+// inside a function reaches it.
+//
+// tomlfuse 0.0.5 puts an allow on the code it generates, and this crate now requires that
+// version, and the lint still fires: checked by removing this line, which brings back two
+// occurrences. So something in the forwarding does not carry the attribute through. Worth
+// finding, and it is tomlfuse's or this crate's expansion rather than the test's, so the
+// allow stays here in the meantime rather than the note claiming it is about to go away.
+#![allow(clippy::approx_constant)]
+
 use confuse::file;
 
 // generate constants from test.toml
@@ -65,9 +76,11 @@ fn test_generated_file_constants() {
     assert_eq!(main::ARRAY[2], "item3");
 
     // config section with hierarchy preserved
-    assert!(!config_vals::DEBUG); // should break if the type is not properly parsed as bool
+    // `const` blocks, because every binding is a constant: a value that stopped parsing as a
+    // bool fails the build rather than the run.
+    const { assert!(!config_vals::DEBUG) };
     assert_eq!(config_vals::settings::TIMEOUT, 500);
-    assert!(config_vals::VALUE); // should break if the type is not properly parsed as bool
+    const { assert!(config_vals::VALUE) };
     assert_eq!(config_vals::STRING, "nested string");
     assert_eq!(config_vals::settings::RETRIES, 3);
     assert_eq!(config_vals::logging::LEVEL, "info");
@@ -76,7 +89,7 @@ fn test_generated_file_constants() {
     // nested values flattened in root
 
     // deep hierarchy tests
-    assert!(deep_stuff::level1::level2::level3::VALUE);
+    const { assert!(deep_stuff::level1::level2::level3::VALUE) };
     assert_eq!(deep_stuff::level1::level2::OTHER, "sibling");
     assert_eq!(deep_stuff::STANDALONE, "top-level");
     // this should not exist due to negation pattern:
@@ -91,13 +104,13 @@ fn test_generated_file_constants() {
     assert_eq!(mixed::ARRAY[0], 1);
     assert_eq!(mixed::ARRAY[1], 2);
     assert_eq!(mixed::ARRAY[2], 3);
-    assert!(mixed::BOOL);
+    const { assert!(mixed::BOOL) };
     assert_eq!(mixed::WITH_DASH, "dashed");
     assert_eq!(mixed::WITH_UNDERSCORE, "underscore");
     assert_eq!(mixed::quoted::KEY, "quoted");
 
     // direct paths
-    assert!(direct::VALUE);
+    const { assert!(direct::VALUE) };
     assert_eq!(direct::OTHER, "sibling");
 
     // duplicate keys at different levels
@@ -109,10 +122,10 @@ fn test_generated_file_constants() {
 
     // aliases
     assert_eq!(renamed::RENAMED_KEY, "value");
-    assert_eq!(renamed::SHORT_PATH, true);
+    const { assert!(renamed::SHORT_PATH) };
     assert_eq!(renamed::CLEAN_NAME, "dashed");
 
     // verify original test case still works
-    assert!(!original::DEBUG);
+    const { assert!(!original::DEBUG) };
     assert_eq!(original::settings::TIMEOUT, 500);
 }

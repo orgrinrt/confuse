@@ -41,6 +41,34 @@
 - Preserves comments from source file into rustdoc comments in the generated code
 - Infers and statically types common primitives, including *arrays*
     - *tables* translate to rust modules by default for cleaner const-time codegen, but can optionally be generated as structs with minimal, but still some, dynamic dispatch
+- Works in `#![no_std]`, with or without an allocator
+
+### `no_std` and no allocator
+
+What a binding expands into is `tomlfuse`'s expansion, so its guarantee is this one: every value
+becomes a `pub const` of `&'static str`, `&'static [T]`, `i64`, `f64` or `bool`, in a `pub mod`,
+plus one `include_bytes!` binding the source file as a build input. Nothing outside `core`, and
+nothing that allocates: a `const` lives in the binary and a `&'static [T]` points into it.
+
+There are `no_std` and `no_alloc` features. Neither switches anything, because there is nothing
+to switch, and forwarding them to `tomlfuse` is not available since it is a dev-dependency here
+rather than a real one. They exist so a workspace that turns them on across every dependency can
+name them. `tests/no_std.rs` is what holds the guarantee, by building a real `#![no_std]` crate
+against this one with a control proving that crate genuinely has no `std` to fall back on.
+
+This crate itself always builds with `std`. It is a proc macro, so it runs on the host inside the
+compiler.
+
+### Examples
+
+[`bind_a_file`](examples/bind_a_file.rs) uses the pattern language on
+[`service.toml`](examples/service.toml): sections, globs, an exclusion and an alias.
+[`manifest_constants`](examples/manifest_constants.rs) runs `package!` and `workspace!`, which
+read a manifest without being told where it is.
+
+```bash
+cargo run --example bind_a_file
+```
 
 ## Supported formats
 | Feature | Format | Status     | Default</br>Extensions | Default</br>Feature | Notes                                                             |

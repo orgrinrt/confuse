@@ -2,17 +2,32 @@
 name = "confuse"
 version = "0.0.4"
 edition = "2021"
-rust-version = "1.73.0"
+# globset 0.4.20 comes in with the default `patterns` feature and declares 1.88, so nothing
+# below that can build this crate however old its own source is. 1.73 was a claim consumers
+# could not act on, and the toolchain file beside this one already recorded why.
+rust-version = "1.88.0"
 description = """
 Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
 """
 authors = ["orgrinrt <orgrinrt@ikiuni.dev>", "Hiisi Digital Oy <ort@hiisi.digital>"]
-license-file = "LICENSE"
+# SPDX rather than a file reference: crates.io shows no identifier for `license-file`, so
+# licence scanners see nothing. The LICENSE file is the same MPL-2.0 text.
+license = "MPL-2.0"
 readme = "README.md"
 keywords = ["toml", "build-time", "constant", "proc-macro"]
 categories = ["development-tools", "config"]
 homepage = "https://github.com/orgrinrt/confuse"
 repository = "https://github.com/orgrinrt/confuse"
+
+[workspace]
+members = []
+
+[workspace.metadata]
+# Read by tests/toml_workspace.rs, which had no workspace to read before this and no test in
+# it either. `workspace!` is public and documented, so the file existed and held a licence
+# header and nothing else.
+purpose = "exercising the workspace! macro"
+count = 3
 
 [features]
 # TODO: should we default to no built-in formats? or all of them? either-or situation I think
@@ -30,11 +45,39 @@ advanced_globs = ["patterns"]
 # optional features
 lazy = ["dep:once_cell"]
 dyn = [] # TODO: evaluate options for dyn support (just std is valid too)
+# What a binding expands into is tomlfuse's expansion, so its guarantee is this one: a `pub
+# const` of `&'static str`, `&'static [T]`, `i64`, `f64` or `bool`, in a `pub mod`, plus one
+# `include_bytes!`. Nothing outside `core`, and nothing that allocates. `tests/no_std.rs`
+# builds a real `#![no_std]` crate against this one to say so, rather than the manifest
+# claiming it.
+#
+# Nothing in `src/` reads either flag. There is nothing to switch, and forwarding them to
+# tomlfuse is not available: it is a dev-dependency here, because a proc macro cannot re-export
+# another proc-macro crate and the consumer names it themselves. They exist so a workspace that
+# turns them on across every dependency can name them here.
+#
+# This crate always builds with `std`. It is a proc macro, so it runs on the host inside the
+# compiler.
+no_std = []
+# The expansion allocates nothing at runtime: a `const` lives in the binary and a
+# `&'static [T]` points into it. There is no allocation to lend and no host to lend it, so
+# notko's lending contract has no role, and no test can tell this flag from `no_std`.
+no_alloc = ["no_std"]
 
 [dev-dependencies]
 tempfile = "3.19.1" # for integration tests
-# the macros here expand to tomlfuse's, so the tests need it the same way a consumer does
-tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", version = "0.0.4" }
+# The tests read a manifest back to check what was bound against what the file says. `toml` is
+# an optional dependency of the crate and is not in the default set, so a test cannot rely on
+# the feature being on to reach it.
+toml = "^0.8"
+# the macros here expand to tomlfuse's, so the tests need it the same way a consumer does.
+#
+# Tracks `dev`, like every other cross-repo git dependency in this workspace. Without a branch
+# it tracked `main`, which is 0.0.4 today and becomes 0.0.5 at the next release, and a 0.0.x
+# bump is breaking, so `version = "0.0.4"` would stop resolving the moment that release landed.
+# Latent rather than broken is the worst place for that to sit: it fails in a repository nobody
+# was editing, on a day nobody touched it.
+tomlfuse = { git = "https://github.com/orgrinrt/tomlfuse.git", branch = "dev", version = "0.0.5" }
 
 [lib]
 proc-macro = true
