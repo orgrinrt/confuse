@@ -38,7 +38,7 @@ list = ["one", "two"]
 /// Reads one const of every type the expansion produces, under `#![no_std]`.
 const USES_EVERY_TYPE: &str = r#"#![no_std]
 
-confuse::bind! {
+confound::bind! {
     "surface.toml"
     [surface]
     surface.*
@@ -101,7 +101,7 @@ edition = "2021"
 [dependencies]
 {extra_deps}
 
-[dependencies.confuse]
+[dependencies.confound]
 path = "{crate_dir}"
 default-features = false
 features = [{features_list}]

@@ -14,7 +14,7 @@
 //! holds every version the build resolved against, and a bug report naming them is one nobody
 //! has to ask a follow-up question about.
 
-use confuse::{package, workspace};
+use confound::{package, workspace};
 
 package! {
     // What this crate calls itself, minus the metadata table, which is where a project keeps
