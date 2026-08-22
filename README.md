@@ -1,34 +1,16 @@
-# `confuse`
+# `confound`
 
 <div align="center" style="text-align: center;">
 
 [![GitHub Stars](https://img.shields.io/github/stars/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/stargazers)
+[![Crates.io](https://img.shields.io/crates/v/confound)](https://crates.io/crates/confound)
+[![docs.rs](https://img.shields.io/docsrs/confound)](https://docs.rs/confound)
 [![GitHub Issues](https://img.shields.io/github/issues/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/issues)
-[![Latest Version](https://img.shields.io/badge/version-0.0.4-red.svg?label=latest)](https://github.com/orgrinrt/confuse)
-![GitHub last commit](https://img.shields.io/github/last-commit/orgrinrt/confuse?color=%23009689&link=https%3A%2F%2Fgithub.com%2Forgrinrt%2Fconfuse)
+![License](https://img.shields.io/github/license/orgrinrt/confuse?color=%23009689)
 
-> Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
-
-> # ⚠️ WORK IN PROGRESS ⚠️
-> ### Almost everything below describes the target design, not the current code.
-> One case is implemented: a single toml source, bound with `bind!`, `file!`, `package!` or
-> `workspace!`. Those four forward their input to the macro of the same name in
-> [`tomlfuse`](https://github.com/orgrinrt/tomlfuse), which is the working toml implementation and
-> is not deprecated. Nothing else in this readme is built. Several sources in one invocation, the
-> other formats, `env` bindings, the `#[fuse]` attribute, the per-format macros, section
-> attributes and resolution modes are all unimplemented, and such input is rejected by tomlfuse's
-> parser rather than handled here.
->
-> **Forwarding means the calling crate needs `tomlfuse` among its own dependencies**, alongside
-> this one. A proc-macro crate cannot re-export another crate's macros, so removing that would
-> mean splitting this into a facade crate and a proc-macro crate behind it.
->
-> **The name is pending a change.** `confuse` is taken on crates.io by an unrelated crate, so this
-> cannot publish under it. The name stays for now to keep the repository and its history stable,
-> and will change before any release.
+> Structured data from files, bound into typed build-time constants with patterns and hierarchies.
 
 </div>
-
 
 ## Features
 
@@ -73,10 +55,10 @@ cargo run --example bind_a_file
 ## Supported formats
 | Feature | Format | Status     | Default</br>Extensions | Default</br>Feature | Notes                                                             |
 |---------|--------|------------|------------------------|---------------------|-------------------------------------------------------------------|
-| `toml`  | toml   | 🚧 wip     | .toml                  | ❌                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
-| `json`  | json   | 📝 planned | .json                  | ❌                   |                                                                   |
-| `yaml`  | yaml   | 📝 planned | .yaml                  | ❌                   |                                                                   |
-| `ron`   | ron    | 📝 planned | .ron                   | ❌                   |                                                                   |
+| `toml`  | toml   | wip     | .toml                  | no                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
+| `json`  | json   | planned | .json                  | no                   |                                                                   |
+| `yaml`  | yaml   | planned | .yaml                  | no                   |                                                                   |
+| `ron`   | ron    | planned | .ron                   | no                   |                                                                   |
 
 No format feature is enabled by default yet; the current `default` set is `patterns`, `alias`, `lazy` and `advanced_globs`. Custom formats plug in through custom parsers, using the `as MyCustomParser` syntax shown in the detailed usage below.
 
@@ -85,7 +67,7 @@ No format feature is enabled by default yet; the current `default` set is `patte
 ### Basic example
 
 ```rust
-use confuse::bind;
+use confound::bind;
 use std::thread;
 use std::time::Duration;
 
@@ -124,7 +106,7 @@ fn main() {
 ### Context and setup
 #### Source definition
 ```rust
-confuse::bind! {
+confound::bind! {
     // source is defined either with explicit name or implicit one:
     source foo = "bar/baz.toml"
     // the implicit name is the file name without the extension
@@ -165,14 +147,14 @@ confuse::bind! {
 ```
 #### Advanced configuration
 ```rust
-confuse::bind!{
+confound::bind!{
     todo!()
 }
 ```
 ### Bindings
 #### Basics: Module declarations (sections)
 ```rust
-confuse::bind! {
+confound::bind! {
     // there can be any amount of bindings in a single invocation, with
     // any amount of source files, and any amount of patterns.
     source foo = "foo.json" as json
@@ -221,7 +203,7 @@ confuse::bind! {
 ```
 #### Basics: Patterns
 ```rust
-confuse::bind! {
+confound::bind! {
     // all patterns have to be inside a section declarations, i.e needs a preceding
     // `[section]` declaration, and are separated by newlines.
     [some_section]
@@ -255,7 +237,7 @@ confuse::bind! {
 ```
 #### Special binding: Aliases
 ```rust
-confuse::bind! {
+confound::bind! {
     [dbg]
     // you can create aliases for example to solve naming conflicts.
     // note that aliases are intended for singular fields (including tables)
@@ -265,7 +247,7 @@ confuse::bind! {
 ```
 #### Special binding: Environment variables
 ```rust
-confuse::bind! {
+confound::bind! {
     [foo]
     // the `env` keyword allows you to bind environment variables
     // that resolve, by default, lazily at runtime:
@@ -282,7 +264,7 @@ confuse::bind! {
 ### Format macros
 For the supported formats, you can use the respectively named macros to bind files with less verbosity in the macro input, for example:
 ```rust
-use confuse::toml;
+use confound::toml;
 toml! {
     "path/to/config.toml"
     ...
@@ -307,7 +289,7 @@ toml! {
 ## Usage: `#[fuse]` attribute
 ### Basic example: Fusing to a module
 ```rust
-use confuse::fuse;
+use confound::fuse;
 
 // the very same concepts as the `bind!` macro, but the resulting code is 
 // "fused" into the item the attribute is attached to. 
@@ -359,10 +341,10 @@ struct Person {
 //     pub const MAX_WEIGHT: u32 = 150;
 //     pub const MAXIMUM_AGE: u32 = 100;
 //     pub static FIRST_NAME: Lazy<String> = Lazy::new(|| {
-//         confuse::__read_config_value!("name.first")
+//         confound::__read_config_value!("name.first")
 //     }
 //     pub static LAST_NAME: Lazy<String> = Lazy::new(|| {
-//         confuse::__read_config_value!("name.last")
+//         confound::__read_config_value!("name.last")
 //     }
 // }
 ```
@@ -415,11 +397,11 @@ struct Person {
 ### Extended features
 
 - While constant time binding is the most useful case for something like this, it is not the only one, and I would like to explore the possibility of allowing for dynamic binding as well with some static safety measures such as creating a schematic based on a toml file for type-safe binding, and allowing sane statically typed instances of the toml file to be created and mutated at runtime with minimal, preferably zero dynamic dispatch overhead
-- While this crate is named `confuse`, it could just as well be abstracted away and made implementable for any file format
+- While this crate is named `confound`, it could just as well be abstracted away and made implementable for any file format
 <details>
 <summary>*Click to expand notes*</summary>
 
-    - It will be great to be able to confuse people outside of toml alone
+    - It will be great to be able to confound people outside of toml alone
         - However, I hate that making this more generic kills the perfect opportunity to adapt this concept to ron... as
           `ronfuse`...
             - but I digress
@@ -448,4 +430,4 @@ Whether you use this project, have learned something from it, or just like it, p
 
 `SPDX-License-Identifier: MPL-2.0`
 
-> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/main/LICENSE)
+> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/dev/LICENSE)

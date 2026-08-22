@@ -25,7 +25,7 @@ mod input;
 /// dependencies alongside this one.
 ///
 /// ```ignore
-/// confuse::bind! {
+/// confound::bind! {
 ///     "config.toml"
 ///
 ///     [config]

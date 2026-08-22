@@ -8,7 +8,7 @@
 //! the constants come out of the file. Everything asserted below is read from
 //! `tests/toml/test.toml` at compile time.
 
-confuse::bind! {
+confound::bind! {
     "tests/test.toml"
 
     [basics]

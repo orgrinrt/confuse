@@ -14,7 +14,7 @@
 //! below come from `[workspace.metadata]` in this crate's own `Cargo.toml`, which is both the
 //! package manifest and the workspace manifest here.
 
-use confuse::workspace;
+use confound::workspace;
 
 workspace! {
     [meta]

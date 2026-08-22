@@ -40,7 +40,7 @@ use utils::*;
 ///
 /// # Example
 /// ```
-/// use confuse::workspace;
+/// use confound::workspace;
 ///
 /// workspace! {
 ///     // generate a module with bound workspace meta
@@ -80,7 +80,7 @@ pub fn workspace(input: TokenStream) -> TokenStream {
 ///
 /// # Example
 /// ```
-/// use confuse::package;
+/// use confound::package;
 ///
 /// package! {
 ///     // extract package meta
@@ -129,7 +129,7 @@ pub fn package(input: TokenStream) -> TokenStream {
 ///
 /// # Example
 /// ```
-/// use confuse::file;
+/// use confound::file;
 ///
 /// file!(
 ///     // path to source toml

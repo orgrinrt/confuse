@@ -16,10 +16,10 @@
 //! # This needs `tomlfuse` too
 //!
 //! A binding expands to `::tomlfuse::file!`, and that path resolves in *this* crate rather
-//! than in `confuse`, so `tomlfuse` has to be among the dependencies alongside it. A
-//! proc-macro crate exports macros and nothing else, so `confuse` cannot pass its own on.
+//! than in `confound`, so `tomlfuse` has to be among the dependencies alongside it. A
+//! proc-macro crate exports macros and nothing else, so `confound` cannot pass its own on.
 
-use confuse::bind;
+use confound::bind;
 
 bind! {
     "examples/service.toml"

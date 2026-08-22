@@ -1,6 +1,6 @@
 [package]
-name = "confuse"
-version = "0.0.4"
+name = "confound"
+version = "0.0.1"
 edition = "2021"
 # globset 0.4.20 comes in with the default `patterns` feature and declares 1.88, so nothing
 # below that can build this crate however old its own source is. 1.73 was a claim consumers
@@ -16,6 +16,7 @@ license = "MPL-2.0"
 readme = "README.md"
 keywords = ["toml", "build-time", "constant", "proc-macro"]
 categories = ["development-tools", "config"]
+exclude = ["_archive/", "target/"]
 homepage = "https://github.com/orgrinrt/confuse"
 repository = "https://github.com/orgrinrt/confuse"
 

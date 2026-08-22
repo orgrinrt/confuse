@@ -15,7 +15,7 @@
 // allow stays here in the meantime rather than the note claiming it is about to go away.
 #![allow(clippy::approx_constant)]
 
-use confuse::file;
+use confound::file;
 
 // generate constants from test.toml
 file! {
