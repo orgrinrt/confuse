@@ -3,32 +3,14 @@
 <div align="center" style="text-align: center;">
 
 [![GitHub Stars](https://img.shields.io/github/stars/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/stargazers)
+[![Crates.io](https://img.shields.io/crates/v/confuse)](https://crates.io/crates/confuse)
+[![docs.rs](https://img.shields.io/docsrs/confuse)](https://docs.rs/confuse)
 [![GitHub Issues](https://img.shields.io/github/issues/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/issues)
-[![Latest Version](https://img.shields.io/badge/version-0.0.4-red.svg?label=latest)](https://github.com/orgrinrt/confuse)
-![GitHub last commit](https://img.shields.io/github/last-commit/orgrinrt/confuse?color=%23009689&link=https%3A%2F%2Fgithub.com%2Forgrinrt%2Fconfuse)
+![License](https://img.shields.io/github/license/orgrinrt/confuse?color=%23009689)
 
-> Bind structured data from various file formats into schemas and properly typed build-time constants with flexible patterns and hierarchies.
-
-> # ⚠️ WORK IN PROGRESS ⚠️
-> ### Almost everything below describes the target design, not the current code.
-> One case is implemented: a single toml source, bound with `bind!`, `file!`, `package!` or
-> `workspace!`. Those four forward their input to the macro of the same name in
-> [`tomlfuse`](https://github.com/orgrinrt/tomlfuse), which is the working toml implementation and
-> is not deprecated. Nothing else in this readme is built. Several sources in one invocation, the
-> other formats, `env` bindings, the `#[fuse]` attribute, the per-format macros, section
-> attributes and resolution modes are all unimplemented, and such input is rejected by tomlfuse's
-> parser rather than handled here.
->
-> **Forwarding means the calling crate needs `tomlfuse` among its own dependencies**, alongside
-> this one. A proc-macro crate cannot re-export another crate's macros, so removing that would
-> mean splitting this into a facade crate and a proc-macro crate behind it.
->
-> **The name is pending a change.** `confuse` is taken on crates.io by an unrelated crate, so this
-> cannot publish under it. The name stays for now to keep the repository and its history stable,
-> and will change before any release.
+> Structured data from files, bound into typed build-time constants with patterns and hierarchies.
 
 </div>
-
 
 ## Features
 
@@ -73,10 +55,10 @@ cargo run --example bind_a_file
 ## Supported formats
 | Feature | Format | Status     | Default</br>Extensions | Default</br>Feature | Notes                                                             |
 |---------|--------|------------|------------------------|---------------------|-------------------------------------------------------------------|
-| `toml`  | toml   | 🚧 wip     | .toml                  | ❌                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
-| `json`  | json   | 📝 planned | .json                  | ❌                   |                                                                   |
-| `yaml`  | yaml   | 📝 planned | .yaml                  | ❌                   |                                                                   |
-| `ron`   | ron    | 📝 planned | .ron                   | ❌                   |                                                                   |
+| `toml`  | toml   | wip     | .toml                  | no                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
+| `json`  | json   | planned | .json                  | no                   |                                                                   |
+| `yaml`  | yaml   | planned | .yaml                  | no                   |                                                                   |
+| `ron`   | ron    | planned | .ron                   | no                   |                                                                   |
 
 No format feature is enabled by default yet; the current `default` set is `patterns`, `alias`, `lazy` and `advanced_globs`. Custom formats plug in through custom parsers, using the `as MyCustomParser` syntax shown in the detailed usage below.
 
@@ -448,4 +430,4 @@ Whether you use this project, have learned something from it, or just like it, p
 
 `SPDX-License-Identifier: MPL-2.0`
 
-> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/main/LICENSE)
+> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/dev/LICENSE)
