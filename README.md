@@ -1,428 +1,41 @@
 # `confound`
 
-<div align="center" style="text-align: center;">
-
-[![GitHub Stars](https://img.shields.io/github/stars/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/stargazers)
-[![Crates.io](https://img.shields.io/crates/v/confound)](https://crates.io/crates/confound)
-[![docs.rs](https://img.shields.io/docsrs/confound)](https://docs.rs/confound)
-[![GitHub Issues](https://img.shields.io/github/issues/orgrinrt/confuse.svg)](https://github.com/orgrinrt/confuse/issues)
-![License](https://img.shields.io/github/license/orgrinrt/confuse?color=%23009689)
+[![Crates.io](https://img.shields.io/crates/v/confound)](https://crates.io/crates/confound) [![docs.rs](https://img.shields.io/docsrs/confound)](https://docs.rs/confound)
 
 > Structured data from files, bound into typed build-time constants with patterns and hierarchies.
 
-</div>
+`confound` is a set of proc macros, `bind!`, `file!`, `package!` and `workspace!`, that read a data file while the crate compiles and turn the keys you pick into constants. Which keys are taken is decided by glob patterns written inside the macro, tables become nested modules, an `alias` renames one path, a `!` prefix excludes, and comments in the source file become the doc comments of the constants. Only toml is bound so far, and the macros forward to [`tomlfuse`](https://github.com/orgrinrt/tomlfuse), which does the reading. The wider design, several sources in one invocation and formats like json and yaml, is not implemented, and that input is rejected by `tomlfuse`'s parser.
 
-## Features
-
-- Compile-time binding of structured data from a file to rust constants
-- Schema generation with proper typing and inferred default values
-- Flexibly preserve table hierarchies as nested modules
-- Glob pattern support for selecting what to bind and what not to
-    - Supports negated patterns for exclusion (`!` prefix)
-- Alias support for renaming paths (`alias foo = bar.baz`)
-- Preserves comments from source file into rustdoc comments in the generated code
-- Infers and statically types common primitives, including *arrays*
-    - *tables* translate to rust modules by default for cleaner const-time codegen, but can optionally be generated as structs with minimal, but still some, dynamic dispatch
-- Works in `#![no_std]`, with or without an allocator
-
-### `no_std` and no allocator
-
-What a binding expands into is `tomlfuse`'s expansion, so its guarantee is this one: every value
-becomes a `pub const` of `&'static str`, `&'static [T]`, `i64`, `f64` or `bool`, in a `pub mod`,
-plus one `include_bytes!` binding the source file as a build input. Nothing outside `core`, and
-nothing that allocates: a `const` lives in the binary and a `&'static [T]` points into it.
-
-There are `no_std` and `no_alloc` features. Neither switches anything, because there is nothing
-to switch, and forwarding them to `tomlfuse` is not available since it is a dev-dependency here
-rather than a real one. They exist so a workspace that turns them on across every dependency can
-name them. `tests/no_std.rs` is what holds the guarantee, by building a real `#![no_std]` crate
-against this one with a control proving that crate genuinely has no `std` to fall back on.
-
-This crate itself always builds with `std`. It is a proc macro, so it runs on the host inside the
-compiler.
-
-### Examples
-
-[`bind_a_file`](examples/bind_a_file.rs) uses the pattern language on
-[`service.toml`](examples/service.toml): sections, globs, an exclusion and an alias.
-[`manifest_constants`](examples/manifest_constants.rs) runs `package!` and `workspace!`, which
-read a manifest without being told where it is.
+## Usage
 
 ```bash
-cargo run --example bind_a_file
+cargo add confound tomlfuse
 ```
 
-## Supported formats
-| Feature | Format | Status     | Default</br>Extensions | Default</br>Feature | Notes                                                             |
-|---------|--------|------------|------------------------|---------------------|-------------------------------------------------------------------|
-| `toml`  | toml   | wip     | .toml                  | no                   | Special keywords for cargo manifests:</br>`crate` and `workspace` |
-| `json`  | json   | planned | .json                  | no                   |                                                                   |
-| `yaml`  | yaml   | planned | .yaml                  | no                   |                                                                   |
-| `ron`   | ron    | planned | .ron                   | no                   |                                                                   |
+Both go in the dependencies, because a binding expands to `::tomlfuse::file!` and that path resolves in your crate, and a proc-macro crate can't hand its own dependencies on.
 
-No format feature is enabled by default yet; the current `default` set is `patterns`, `alias`, `lazy` and `advanced_globs`. Custom formats plug in through custom parsers, using the `as MyCustomParser` syntax shown in the detailed usage below.
+```rust,ignore
+confound::bind! {
+    "config.toml"
 
-
-## Usage: `bind!` macro
-### Basic example
-
-```rust
-use confound::bind;
-use std::thread;
-use std::time::Duration;
-
-bind! {
-    "path/to/config.toml"
-    
     [config]
     settings.*
-    !settings.defaults.*
     !settings.internal.*
     alias debug_timeout = settings.debug.timeout.length
-    
-    [defaults]
-    project.defaults.*
-    settings.defaults.*
 }
 
 fn main() {
-    let timeout = config::DEBUG_TIMEOUT; //      from source's `settings.debug.timeout.length`
-    let err_msg = config::debug::ERR_MESSAGE; // from source's `settings.debug.timeout.err_message`
-    let hello = defaults::HELLO; //              from source's `project.defaults.hello.msg`
-    for p in defaults::PEOPLE { //               from source's `project.defaults.people`
-        if p.is_empty() {
-            eprintln!("{}", err_msg);
-            continue;
-        }
-        println!("{} says {}", p, hello);
-        thread::sleep(Duration::from_millis(timeout));
-    }
+    let timeout = config::DEBUG_TIMEOUT; // from `settings.debug.timeout.length`
 }
 ```
 
-<details>
-<summary>Click to expand detailed usage</summary>
+Everything is resolved at compile time, so nothing reads a file when the program runs, and a pattern that stops matching is a compile error and not a missing value. `package!` and `workspace!` read a Cargo manifest without being told where it is. `cargo run --example bind_a_file` binds `examples/service.toml` with sections, globs, an exclusion and an alias, and `manifest_constants` does the same for `package!` and `workspace!`.
 
-### Context and setup
-#### Source definition
-```rust
-confound::bind! {
-    // source is defined either with explicit name or implicit one:
-    source foo = "bar/baz.toml"
-    // the implicit name is the file name without the extension
-    "fizz/buzz.json" //    <=> `source buzz = "fizz/buzz.json"`
-    
-    // if the entire binding invocation only uses a single source file, the naming
-    // can entirely be omitted for brevity and convenience; see binding rules for examples.
-    
-    // by default, the format is inferred from the extension
-    // so there is, in most cases, no need to specify the format
-    // e.g this is valid:
-    "path/to/config.json" 
-    
-    // however, if you want to use an unconventional or completely
-    // custom extensions, you can specify the format like this:
-    "path/to/project.config" as json
-    
-    // you can also use a custom parser like this:
-    "path/to/config.toml" as MyCustomParser
-    
-    // for certain formats, there are also built-in keywords for certain files
-    // e.g. for toml, `crate` and `workspace` are valid and resolve to the
-    // current crate's Cargo.toml and the workspace's Cargo.toml respectively, e.g:
-    
-    crate as toml //     <-- can resolve to something like: `$CARGO_MANIFEST_DIR/Cargo.toml`
-    workspace as toml // <-- can resolve to something like: `$CARGO_MANIFEST_DIR/../../Cargo.toml`
-    
-    // do also note that using the `as` keyword like above is unnecessary,
-    // since these special keywords only exist in toml context. This is equally valid:
-    crate // <-- this is valid because the toml parser is implicitly tied by convention
-    
-    // the semantic `as` keyword is syntactic sugar that is
-    // equivalent to the explicitly named source type notation:
-    
-    source workspace: toml = workspace //    <=>  `workspace as toml`  <=>  `workspace`
-    source foo: MyCustomYaml = "foo.yml" //  <=>  `"foo.yml" as MyCustomYaml`
-}
-```
-#### Advanced configuration
-```rust
-confound::bind!{
-    todo!()
-}
-```
-### Bindings
-#### Basics: Module declarations (sections)
-```rust
-confound::bind! {
-    // there can be any amount of bindings in a single invocation, with
-    // any amount of source files, and any amount of patterns.
-    source foo = "foo.json" as json
-    source bar = "bar.yml" as yaml
+What a binding expands into is `tomlfuse`'s output, so every value is a `pub const` of `&'static str`, `&'static [T]`, `i64`, `f64` or `bool` in a `pub mod`, plus an `include_bytes!` binding the source file as a build input, which works in `#![no_std]` with or without an allocator. The `no_std` and `no_alloc` features only name that, and `tests/no_std.rs` builds a real `#![no_std]` crate against it. The crate itself is a proc macro and always builds with `std`.
 
-    // each binding starts with the module declaration and is followed
-    // by a list of patterns, which are separated by a newline.
+## Status
 
-    [settings] // <-- will generate a rust module named `settings`
-    config.*           // = include all config.* fields
-    !config.internal.* // = ...but exclude internals
-
-    // there is optionally a syntax for attributes:
-    [settings, {
-        // an attribute is a key-value pair separated by a comma:
-        source = foo,
-        // the value can also be a fn call, as long as it produces a valid value:
-        other_attr = some_ctor(arg1, arg2),
-        // for flag-like attributes, you can omit the value:
-        argless_attr,
-    }]
-    // there's also a short notation that's valid as long as there are no line breaks:
-    [settings(source = foo, some_flag)]
-    // the attributes are useful in that they can be used to 
-    // specify instructions for the codegen, such as the source file.
-
-    // attributes defined at the section level will apply implicitly to
-    // all the patterns/rules in the section, but can be overridden individually:
-    [settings(source = foo)]
-    config.* //                      <-- this will use `foo` as the source
-    #[source = bar] debug.consts.*// <-- this will instead use `bar` as source
-
-    // individual attributes can be freely used on any pattern/rule.
-    // the attribute has to precede the pattern/rule, but is valid both
-    // with a newline, and without:
-    #[some_flag]
-    fizz.buzz.* // <-- this is as valid as `#[some_flag] fizz.buzz.*`
-
-    // and for convenience, there is a combinator syntax for attributes
-    #[source = bar, some_flag, another_flag]
-    hello.*
-    // this is also valid for section-level attributes, so this is a valid section declaration too:
-    #[source = bar, some_flag]
-    [settings]
-}
-```
-#### Basics: Patterns
-```rust
-confound::bind! {
-    // all patterns have to be inside a section declarations, i.e needs a preceding
-    // `[section]` declaration, and are separated by newlines.
-    [some_section]
-    some.rule.*
-    !some.rule._private.*
-    // the patterns are glob-like, and can match as many fields as you'd like.
-    // the resulting codegen will default to generating constants if no explicit
-    // resolution mode is set.
-    
-    // you can explicitly set the resolution mode to one of:
-    // - `lazy`: will be resolved at runtime, once, on first access
-    // - `static`: will be resolved at compile time, but inlining left to compiler
-    // - `const`: will be resolved at compile time and inlined always
-    static config.foo.* //  <-- all the matches will resolve at compile time, but may not inline
-    lazy config.foo.buzz // <-- valid for individual fields too.
-    const config.bar.baz // <-- this will resolve at compile time and always inline.
-    // ^ this is the default behaviour implicitly used if no resolution mode is set.
-    //   this also means you can also just omit explicitly writing it for brevity and convenience.
-    
-    // these resolution modes can be mixed and matched with the patterns, and
-    // you can also simply override individual fields with them, even if they are
-    // already brought in by a pattern, which is done by default.
-    // if the field is not yet matched by a pattern, it will be implicitly included
-    // with this definition notation.
-    
-    // negation patterns are special in that they, naturally, do not allow for
-    // resolution modes, since they are, well, excluded.
-    lazy !config._private.* // <-- this is invalid and will not compile
-    
-}
-```
-#### Special binding: Aliases
-```rust
-confound::bind! {
-    [dbg]
-    // you can create aliases for example to solve naming conflicts.
-    // note that aliases are intended for singular fields (including tables)
-    // so they should not contain glob patterns:
-    alias timeout = config.params.timeout
-}
-```
-#### Special binding: Environment variables
-```rust
-confound::bind! {
-    [foo]
-    // the `env` keyword allows you to bind environment variables
-    // that resolve, by default, lazily at runtime:
-    env FOO_TARGET_DIR
-    // optionally you can also set default values to use if the env var is not set:
-    env FOO_WORKING_DIR = "path/to/working/dir"
-    
-    // all special bindings can be mixed in with other rules, so this is valid continuation:
-    some.path.*
-    !some.path._private.*
-}
-```
-
-### Format macros
-For the supported formats, you can use the respectively named macros to bind files with less verbosity in the macro input, for example:
-```rust
-use confound::toml;
-toml! {
-    "path/to/config.toml"
-    ...
-}
-toml! {
-    crate // <-- this is valid because the toml parser is implicit
-    ...
-}
-toml! {
-    workspace // <-- same thing here
-    ...
-}
-// this same applies to other supported and enabled formats and their special keywords
-```
-#### The main difference vs. the main `bind!` macro:
-1. The format is statically bound to the macro, so the parser is implicit and need not be specified
-    - Custom parsers can however still be used with the usual syntax
-2. This skips some infer checks and other processing due to the statically bound format, so it is a bit faster to compile
-
-</details>
-
-## Usage: `#[fuse]` attribute
-### Basic example: Fusing to a module
-```rust
-use confound::fuse;
-
-// the very same concepts as the `bind!` macro, but the resulting code is 
-// "fused" into the item the attribute is attached to. 
-
-// the biggest difference is that this macro supports root-level patterns, 
-// instead of all of the patterns needing to be inside a section declaration.
-
-// actual section declarations within this macro will produce submodules when
-// the macro is attached to a module item, but in case of structs or enums, 
-// declaring sections will result in compile errors (for now).
-
-// as such, for modules, this works pretty much exactly the same as the macro:
-#[fuse(
-    "path/to/config.toml"
-    
-    [some_submod]
-    config.*
-    !config.internal.*
-    
-    [other_submod]
-    alias debug_timeout = config.debug.timeout.length
-    env FOO_TARGET_DIR
-    env FOO_WORKING_DIR = "path/to/working/dir"
-)]
-mod settings {
-    // this can be empty, but can also include whatever other items and definitions you want.
-}
-```
-### Basic example: Fusing to a struct
-```rust
-// for structs, we can only define root-level patterns, aliases and other definitions:
-#[fuse(
-    "models/base.person" as toml
-    const physicals.max_height
-    const physicals.max_weight
-    const alias maximum_age = physicals.max_age
-    lazy alias first_name = name.first
-    lazy alias last_name = name.last
-)]
-struct Person {
-    // the struct can just be empty if only used for fusing
-    // however, it can be any struct, even a fully defined one with prior use:
-    name: String,
-    favourite_animal: Box<dyn Animal>,
-}
-// this would generate something similar to:
-// impl Person {
-//     pub const MAX_HEIGHT: u32 = 200;
-//     pub const MAX_WEIGHT: u32 = 150;
-//     pub const MAXIMUM_AGE: u32 = 100;
-//     pub static FIRST_NAME: Lazy<String> = Lazy::new(|| {
-//         confound::__read_config_value!("name.first")
-//     }
-//     pub static LAST_NAME: Lazy<String> = Lazy::new(|| {
-//         confound::__read_config_value!("name.last")
-//     }
-// }
-```
-
-## Limitations and future work
-
-### Value types and patterns
-
-- Presently only supports homogeneous arrays (e.g. `["a", "b", "c"]`), not heterogeneous (e.g. `[1, "a", 3.14]`)
-<details>
-<summary>*Click to expand notes*</summary>
-
-    - This is planned for the future
-        - Initially by converting each element to a string representation and generating an array of strings in its stead (not ideal, but leaves the door open for consumer-side implementations for this)
-        - Later down the line, as an optional alternative, by translating the array to an array of option tuples by merging the unique types of all the elements in the array as options wherein each
-          `Some` value represents the element, and writing some convenience traits around the concept to get the values out of the array in a type-safe but "natural" way, while remaining build-time constant and avoiding dynamic dispatch
-            - A tradeoff between runtime performance and binary size and compilation time,
-              *if* someone truly needs this
-    - However, I'm not sure this is a common enough use-case to make a priority right now, I would be interested to hear any use cases that would require this though
-</details>
-
-- As of right now, more complex globs are not covered in tests (e.g.
-  `config.*.timeout`), and may or may not work in different cases
-<details>
-<summary>*Click to expand notes*</summary>
-
-    - These tests and possibly some refactoring to cover these cases are however being implemented in very near future as it is fundamental to the concept to handle these
-    - The most common use case would be the patterns supported right now, so this crate releases initially with just them stabilized
-</details>
-
-- Glob syntax for collections, i.e `{a|b|c}`, or other more involved patterns is not supported yet either
-<details>
-<summary>*Click to expand notes*</summary>
-
-    - This is something that would be preferable to support, but also not a priority right now, since the use case of toml file binding feels to me like something that would not often warrant the use of this kind of complexity
-</details>
-
-- Aliasing currently only supports singular values (including tables), but not batches (i.e pattern aliases)
-<details>
-<summary>*Click to expand notes*</summary>
-
-    - In future there will be support for simple batch aliasing by using the source path's segment that matches a star to place into the alias pattern's same index star
-        - This will however have some constraints that make it less useful than I'd ultimately want it to be, like:
-            - This would only work with patterns that contain nothing but glob stars (however the amount of those could be any)
-            - If there are multiple stars, then both sides of the alias assignment must match the same amount of stars, otherwise it won't work, which may or may not be obvious and would probably be confusing to the user
-    - In the long run, it'd be great to find a more general solution, but this would be entirely outside this crate's scope, so it would be an integration of another crate that does this ultimately.
-        - I would be interested to hear suggestions in the meanwhile
-</details> 
-
-### Extended features
-
-- While constant time binding is the most useful case for something like this, it is not the only one, and I would like to explore the possibility of allowing for dynamic binding as well with some static safety measures such as creating a schematic based on a toml file for type-safe binding, and allowing sane statically typed instances of the toml file to be created and mutated at runtime with minimal, preferably zero dynamic dispatch overhead
-- While this crate is named `confound`, it could just as well be abstracted away and made implementable for any file format
-<details>
-<summary>*Click to expand notes*</summary>
-
-    - It will be great to be able to confound people outside of toml alone
-        - However, I hate that making this more generic kills the perfect opportunity to adapt this concept to ron... as
-          `ronfuse`...
-            - but I digress
-</details>
-
-
-## Compatibility
-
-This crate requires rust `1.73.0` or later. With present dependencies, this is the minimum supported version the dependencies allow. Bumping msrv is considered a breaking change and will be done in a minor version.
-
-### Versioning policy
-
-Minor versions may have breaking changes, which can include bumping msrv.
-
-Patch versions are backwards compatible.
-
-## Support
-
-Whether you use this project, have learned something from it, or just like it, please consider supporting it by buying me a coffee, so I can dedicate more time on open-source projects like this :)
-
-<a href="https://buymeacoffee.com/orgrinrt" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+Pre-1.0 and work in progress. Arrays have to be homogeneous, more complex globs such as `config.*.timeout` aren't covered by tests, and aliases only take singular values, tables included, and not patterns. The minimum supported rust is 1.73, and minor versions may break while patch versions don't.
 
 ## License
 
@@ -430,4 +43,4 @@ Whether you use this project, have learned something from it, or just like it, p
 
 `SPDX-License-Identifier: MPL-2.0`
 
-> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/dev/LICENSE)
+> You can check out the full license [here](https://github.com/orgrinrt/confuse/blob/main/LICENSE)
